@@ -19,10 +19,18 @@ def init_rag():
     
     print("Initializing RAG system...")
     
+    # Get database URL (should already be validated in database.py)
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        raise ValueError(
+            "DATABASE_URL environment variable is not set. "
+            "Please configure it in your Railway project settings."
+        )
+    
     vector_store = PGVector(
         embeddings=AIClient.get_embeddings(),
         collection_name="biodiversity_docs",
-        connection=os.environ["DATABASE_URL"],
+        connection=database_url,
         use_jsonb=True,
     )
     

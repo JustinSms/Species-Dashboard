@@ -88,15 +88,46 @@ This approach:
 ### Build fails with "npm: not found"
 - ✅ **Fixed!** The Dockerfile now handles both Node.js and Python
 
-### Database connection errors
-- Ensure PostgreSQL is added to your Railway project
-- Verify `DATABASE_URL` is set correctly
-- Check that the pgvector extension is enabled
+### Database connection errors (`connection to server at "localhost" ... failed`)
+
+This error means your Railway service can't connect to the database. Follow these steps:
+
+**Step 1: Add PostgreSQL Database**
+1. Go to your Railway project dashboard
+2. Click **"+ New"** → **"Database"** → **"Add PostgreSQL"**
+3. Wait for the database to provision
+
+**Step 2: Link Database to Your Service**
+1. Railway should automatically create a `DATABASE_URL` variable
+2. Go to your service's **"Variables"** tab
+3. Verify `DATABASE_URL` is present and looks like:
+   ```
+   postgresql://postgres:password@hostname:port/dbname
+   ```
+4. If missing, add it manually using the connection string from your PostgreSQL service
+
+**Step 3: Add Other Required Variables**
+1. In the **"Variables"** tab, add:
+   - `ANTHROPIC_API_KEY` - Your Anthropic API key
+   - `IUCN_API_KEY` - Your IUCN Red List API token (optional, but recommended)
+
+**Step 4: Redeploy**
+- Railway will automatically redeploy when you save new variables
+- Or manually trigger: **"Settings"** → **"Redeploy"**
 
 ### Frontend not loading
 - Check Railway logs: `railway logs`
 - Verify frontend was built: Should see `frontend/dist` in build logs
 - Check that `main.py` has the static file serving code
+
+### "DATABASE_URL environment variable is not set"
+- This means the environment variable is missing from Railway
+- Follow the database connection errors steps above
+
+### Healthcheck keeps failing after fixing environment variables
+- Check Railway logs for detailed error messages
+- Ensure pgvector extension is enabled (see section below)
+- Verify all dependencies installed correctly in the build logs
 
 ### Port binding errors
 - The Dockerfile uses `${PORT:-8000}` to respect Railway's port
