@@ -74,3 +74,6 @@ except FileNotFoundError:
     print("Warning: Frontend not built — run `npm run build` in /frontend")
 except Exception as e:
     print(f"Warning: Could not mount static files - {e}")
+
+
+print("Biodiversity Intelligence App is running")
