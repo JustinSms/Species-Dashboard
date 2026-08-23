@@ -1,0 +1,2 @@
+# Drop PDF reports here for ingestion
+# Run: uv run python scripts/ingest_pdfs.py

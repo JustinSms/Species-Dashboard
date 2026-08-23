@@ -1,0 +1,23 @@
+[project]
+name = "biodiversity-intelligence-backend"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "langchain-core",
+    "langchain-community",
+    "langchain-anthropic",
+    "langchain-postgres",
+    "langchain-huggingface",
+    "anthropic",
+    "pandas",
+    "pymannkendall",
+    "httpx",
+    "pymupdf",
+    "psycopg2-binary",
+    "sqlalchemy",
+    "alembic",
+    "python-dotenv",
+    "sentence-transformers",
+]
