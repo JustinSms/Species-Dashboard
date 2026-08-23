@@ -3,12 +3,22 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Load environment variables
+# Load environment variables from .env file (for local development only)
+# In production (Railway), environment variables are provided directly
 load_dotenv()
+
+# Get database URL with better error handling
+database_url = os.environ.get("DATABASE_URL")
+if not database_url:
+    raise ValueError(
+        "DATABASE_URL environment variable is not set. "
+        "Please configure it in your Railway project settings. "
+        "See DEPLOYMENT.md for instructions."
+    )
 
 # Create database engine
 engine = create_engine(
-    os.environ["DATABASE_URL"],
+    database_url,
     pool_pre_ping=True
 )
 

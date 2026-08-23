@@ -38,10 +38,17 @@ class AIClient:
             ChatAnthropic instance
         """
         if cls._llm is None or cls._llm.temperature != temperature:
+            api_key = os.environ.get("ANTHROPIC_API_KEY")
+            if not api_key:
+                raise ValueError(
+                    "ANTHROPIC_API_KEY environment variable is not set. "
+                    "Please configure it in your Railway project settings or .env file."
+                )
+            
             cls._llm = ChatAnthropic(
                 model="claude-3-5-sonnet-20241022",
                 temperature=temperature,
-                api_key=os.environ.get("ANTHROPIC_API_KEY")
+                api_key=api_key
             )
         return cls._llm
     
