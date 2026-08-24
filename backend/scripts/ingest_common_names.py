@@ -178,7 +178,13 @@ def _download_with_resume(url: str, destination: str, max_retries: int = 20) -> 
 
                     expected = done + int(response.headers.get("content-length", 0))
                     with open(destination, mode) as handle:
-                        for chunk in response.iter_bytes(1 << 22):
+                        # Raw and unchunked, on both counts deliberately. Raw
+                        # bytes are what the byte offsets in the Range header
+                        # count, and asking for fixed-size chunks would hold
+                        # them in a buffer that httpx discards when the host
+                        # hangs up, so a host dropping the connection below the
+                        # chunk size would never make progress.
+                        for chunk in response.iter_raw():
                             handle.write(chunk)
                             done += len(chunk)
                             attempts = 0
