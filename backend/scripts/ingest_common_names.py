@@ -59,16 +59,47 @@ ENGLISH = "en"
 # Enough of the tail to cover the end-of-central-directory records.
 TAIL_BYTES = 70000
 
+# Consecutive failures tolerated per request before giving up on the run.
+MAX_ATTEMPTS = 8
+
 # Words are what the index is built on, so split on anything that isn't part of
 # one. Keeps digits, which carry meaning in names like "13-Spotted Lady Beetle".
 WORD_PATTERN = re.compile(r"[^a-z0-9']+")
 
 
+def _retrying(description: str, operation):
+    """
+    Run operation, backing off and retrying while the host aborts on us.
+
+    GBIF's host closes connections mid-response often enough, and without
+    regard for how much was asked for, that every request here has to expect
+    it. A dropped 70KB range request is not worth losing the run over.
+    """
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            return operation()
+        except (httpx.HTTPError, OSError) as error:
+            if attempt == MAX_ATTEMPTS:
+                raise
+            delay = min(30, 2 ** attempt)
+            print(f"  {description} failed ({error}); retrying in {delay}s")
+            time.sleep(delay)
+
+
 def _fetch_range(client: httpx.Client, start: int, end: int) -> bytes:
-    """Fetch an inclusive byte range."""
-    response = client.get(BACKBONE_URL, headers={"Range": f"bytes={start}-{end}"})
-    response.raise_for_status()
-    return response.content
+    """Fetch an inclusive byte range, retrying if the host hangs up."""
+    def attempt() -> bytes:
+        response = client.get(BACKBONE_URL, headers={"Range": f"bytes={start}-{end}"})
+        response.raise_for_status()
+        # Without the range, this is a 970MB body read into memory.
+        if response.status_code != 206:
+            raise httpx.HTTPError(
+                f"range ignored: asked for bytes {start}-{end}, "
+                f"got {response.status_code}"
+            )
+        return response.content
+
+    return _retrying(f"bytes {start}-{end}", attempt)
 
 
 def _locate_member(client: httpx.Client) -> tuple[int, int]:
@@ -81,7 +112,12 @@ def _locate_member(client: httpx.Client) -> tuple[int, int]:
     Returns:
         (offset of the local file header, compressed size)
     """
-    total = int(client.head(BACKBONE_URL).headers["content-length"])
+    def head() -> httpx.Response:
+        response = client.head(BACKBONE_URL)
+        response.raise_for_status()
+        return response
+
+    total = int(_retrying("HEAD", head).headers["content-length"])
     tail = _fetch_range(client, max(0, total - TAIL_BYTES), total - 1)
 
     zip64 = tail.rfind(b"PK\x06\x06")
