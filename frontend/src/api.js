@@ -13,6 +13,15 @@ export const searchSpecies = async (q) => {
   }
 };
 
+export const suggestSpecies = async (q, signal) => {
+  try {
+    const response = await instance.get('/species/suggest', { params: { q }, signal });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const getSpecies = async (gbifKey) => {
   try {
     const response = await instance.get(`/species/${gbifKey}`);
