@@ -4,7 +4,7 @@ from sqlalchemy import insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from database import get_db
 from models import Species, Occurrence
-from services import gbif, iucn
+from services import common_names, gbif, iucn
 
 router = APIRouter(tags=["species"])
 
@@ -75,6 +75,27 @@ async def search_species(q: str = Query(..., description="Search query"), db: Se
         })
     
     return {"results": results}
+
+
+@router.get("/species/suggest")
+# Deliberately sync: the index query is pure blocking SQL, so FastAPI runs it in
+# a worker thread instead of stalling the event loop on every keystroke.
+def suggest_species(
+    q: str = Query(..., description="Partial common name"),
+    limit: int = Query(8, ge=1, le=20, description="Maximum number of suggestions"),
+    db: Session = Depends(get_db)
+):
+    """
+    Autocomplete suggestions for species by English common name.
+
+    Served entirely from the local common_names index, so no GBIF call happens
+    per keystroke. Read-only — picking a suggestion goes through /species/search,
+    which resolves the GBIF key and upserts the species.
+
+    Must stay declared above /species/{gbif_key}: that route types gbif_key as
+    int, so "suggest" would be rejected as invalid rather than falling through.
+    """
+    return {"suggestions": common_names.search(db, q, limit=limit)}
 
 
 @router.get("/species/{gbif_key}")

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { searchSpecies, getSpecies } from '../api';
 import SpeciesCard from '../components/SpeciesCard';
+import SpeciesSearchInput from '../components/SpeciesSearchInput';
 
 const Discover = () => {
   const [query, setQuery] = useState('');
@@ -28,20 +29,18 @@ const Discover = () => {
     fetchFeatured();
   }, []);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    
+  const handleSearch = async (term) => {
     // Validate query
-    if (!query.trim()) {
+    if (!term.trim()) {
       setError('Please enter a species name');
       return;
     }
 
     setError('');
     setLoading(true);
-    
+
     try {
-      const data = await searchSpecies(query);
+      const data = await searchSpecies(term);
       setResults(data.results || []);
     } catch (err) {
       setError('Error searching for species. Please try again.');
@@ -57,40 +56,12 @@ const Discover = () => {
     <div>
       <h1 className="page-title">Discover Species</h1>
 
-      {/* Search Form */}
-      <form onSubmit={handleSearch} style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by scientific or common name..."
-            style={{
-              flex: 1,
-              padding: '10px 14px',
-              fontSize: '14px',
-              border: '1px solid #e0e0e0',
-              borderRadius: '6px',
-              outline: 'none'
-            }}
-          />
-          <button
-            type="submit"
-            style={{
-              padding: '10px 24px',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: 'white',
-              background: '#2e7d32',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer'
-            }}
-          >
-            Search
-          </button>
-        </div>
-      </form>
+      {/* Search Form with common-name autocomplete */}
+      <SpeciesSearchInput
+        value={query}
+        onChange={setQuery}
+        onSearch={handleSearch}
+      />
 
       {/* Error Message */}
       {error && (
