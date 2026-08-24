@@ -37,3 +37,6 @@ Optionally: drop PDF reports into `backend/data/corpus/` and run `uv run python 
 - `GET  /api/analysis/region/{iso2}`
 - `POST /api/chat`
 - `GET  /api/chat/suggestions`
+
+## One-Time PG Seeding
+- cd backend && uv run python scripts/ingest_common_names.py
